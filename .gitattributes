@@ -1,2 +1,426 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Codi de Colors de Resistors</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .color-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 0.65rem auto;
+        }
+        .animated-gradient {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* Estil per al missatge d'error personalitzat */
+        #error-modal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="animated-gradient text-gray-800">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        
+        <div class="w-full max-w-5xl bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Calculadora de Resistors</h1>
+                <p class="text-gray-600 mt-2">Una eina interactiva per al codi de colors de 4 bandes</p>
+            </header>
+
+            <main class="flex flex-col items-center justify-center">
+                <!-- Representació Gràfica del Resistor -->
+                <div class="mb-8 flex items-center justify-center space-x-0.5">
+                    <div class="w-8 h-16 bg-gray-300 rounded-l-md"></div>
+                    <div class="flex items-center justify-center bg-yellow-100 h-24 w-64 rounded-lg shadow-inner px-2">
+                        <div id="band1-vis" class="w-6 h-24 transition-colors duration-300"></div>
+                        <div class="w-8 h-24"></div>
+                        <div id="band2-vis" class="w-6 h-24 transition-colors duration-300"></div>
+                        <div class="w-8 h-24"></div>
+                        <div id="band3-vis" class="w-6 h-24 transition-colors duration-300"></div>
+                        <div class="w-16 h-24"></div>
+                        <div id="band4-vis" class="w-6 h-24 transition-colors duration-300"></div>
+                    </div>
+                    <div class="w-8 h-16 bg-gray-300 rounded-r-md"></div>
+                </div>
+
+                <!-- Panell de Resultats -->
+                 <div class="text-center mb-8 bg-gray-100 p-6 rounded-xl shadow-md w-full max-w-2xl">
+                    <h2 class="text-xl font-bold mb-4 text-gray-700">Resultats del Càlcul</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-lg">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500">Valor Nominal</p>
+                            <p id="result-value" class="font-bold text-2xl text-indigo-600"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500">Tolerància</p>
+                            <p id="result-tolerance" class="font-bold text-2xl text-indigo-600"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500">Rang de Valors</p>
+                            <p id="result-range" class="font-bold text-lg text-indigo-600"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seccions de Càlcul -->
+                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                    
+                    <!-- Secció 1: De Colors a Valor -->
+                    <div class="bg-white/80 p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 text-center text-gray-700">Calcular a partir dels Colors</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="band1" class="font-semibold text-gray-600">1a Banda (1a xifra)</label>
+                                <select id="band1" class="color-select w-full mt-1 p-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition text-white font-bold"></select>
+                            </div>
+                            <div>
+                                <label for="band2" class="font-semibold text-gray-600">2a Banda (2a xifra)</label>
+                                <select id="band2" class="color-select w-full mt-1 p-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition text-white font-bold"></select>
+                            </div>
+                            <div>
+                                <label for="band3" class="font-semibold text-gray-600">3a Banda (Multiplicador)</label>
+                                <select id="band3" class="color-select w-full mt-1 p-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition text-white font-bold"></select>
+                            </div>
+                             <div>
+                                <label for="band4" class="font-semibold text-gray-600">4a Banda (Tolerància)</label>
+                                <select id="band4" class="color-select w-full mt-1 p-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition text-white font-bold"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secció 2: De Valor a Colors -->
+                    <div class="bg-white/80 p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 text-center text-gray-700">Calcular a partir del Valor</h3>
+                        <div class="space-y-4">
+                             <div>
+                                <label for="value-input" class="font-semibold text-gray-600">Valor Nominal (ex: 220, 4.7k, 1.5M)</label>
+                                <input type="text" id="value-input" class="w-full mt-1 p-3 rounded-lg border-2 border-gray-300 focus:border-teal-500 focus:ring-teal-500 transition" placeholder="Introdueix el valor...">
+                            </div>
+                            <div>
+                                <label for="tolerance-input" class="font-semibold text-gray-600">Tolerància</label>
+                                <select id="tolerance-input" class="w-full mt-1 p-3 rounded-lg border-2 border-gray-300 focus:border-teal-500 focus:ring-teal-500 transition bg-white"></select>
+                            </div>
+                            <div class="pt-2">
+                                <button id="convert-to-color-btn" class="w-full bg-teal-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-600 transition-colors duration-300 shadow-lg">
+                                    Converteix a Colors
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secció de Teoria -->
+                <div class="w-full max-w-4xl bg-gray-50 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Teoria: Com llegir el Codi de Colors</h2>
+                    <div class="text-gray-700 space-y-4">
+                        <p>Els resistors utilitzen un codi de bandes de colors per indicar el seu valor de resistència. En un resistor de 4 bandes, la lectura es fa de la següent manera:</p>
+                        <ul class="list-disc list-inside space-y-2 pl-4">
+                            <li>La <strong>primera banda</strong> és la primera xifra significativa del valor.</li>
+                            <li>La <strong>segona banda</strong> és la segona xifra significativa.</li>
+                            <li>La <strong>tercera banda</strong> és el multiplicador (potència de 10 per la qual es multiplica el valor de les dues primeres bandes).</li>
+                            <li>La <strong>quarta banda</strong>, normalment separada de les altres, indica la tolerància (el marge d'error sobre el valor nominal).</li>
+                        </ul>
+                        <p><strong>Exemple:</strong> Un resistor amb els colors <strong>Marró, Negre, Vermell, Or</strong> es llegeix:</p>
+                        <p class="pl-4"><strong>Marró (1)</strong> | <strong>Negre (0)</strong> | <strong>Vermell (x100)</strong> => 10 × 100 = 1000 Ω (o 1 kΩ), amb una tolerància <strong>Or (±5%)</strong>.</p>
+                    </div>
+                    <div class="mt-6 overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Color</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">1a/2a Banda</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Multiplicador</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Tolerància</th>
+                                </tr>
+                            </thead>
+                            <tbody id="color-table" class="bg-white divide-y divide-gray-200">
+                                <!-- Les files de la taula s'afegiran amb JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modal d'Error -->
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 opacity-0">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 class="text-lg font-bold text-red-600 mb-4">Error en el Càlcul</h3>
+            <p id="error-message" class="text-gray-700 mb-6"></p>
+            <button id="close-error-btn" class="bg-red-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-600 transition-colors">Tancar</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dades basades en la imatge original de l'usuari
+            const COLORS = {
+                'Negre':   { rgb: 'rgb(0, 0, 0)',         value: 0, multiplier: 1,       tolerance: null },
+                'Marró':   { rgb: 'rgb(165, 42, 42)',    value: 1, multiplier: 10,      tolerance: 1 },
+                'Vermell': { rgb: 'rgb(255, 0, 0)',       value: 2, multiplier: 100,     tolerance: 2 },
+                'Taronja': { rgb: 'rgb(255, 165, 0)',    value: 3, multiplier: 1000,    tolerance: null },
+                'Groc':    { rgb: 'rgb(255, 255, 0)',    value: 4, multiplier: 10000,   tolerance: null },
+                'Verd':    { rgb: 'rgb(0, 128, 0)',      value: 5, multiplier: 100000,  tolerance: 0.5 },
+                'Blau':    { rgb: 'rgb(0, 0, 255)',      value: 6, multiplier: 1000000, tolerance: 0.25 },
+                'Violat':  { rgb: 'rgb(138, 43, 226)',   value: 7, multiplier: null,    tolerance: 0.1 },
+                'Gris':    { rgb: 'rgb(128, 128, 128)',   value: 8, multiplier: null,    tolerance: 0.05 },
+                'Blanc':   { rgb: 'rgb(255, 255, 255)',  value: 9, multiplier: null,    tolerance: null },
+                'Or':      { rgb: 'rgb(255, 215, 0)',    value: null, multiplier: 0.1,    tolerance: 5 },
+                'Plata':   { rgb: 'rgb(192, 192, 192)',  value: null, multiplier: 0.01,   tolerance: 10 }
+            };
+
+            const band1 = document.getElementById('band1');
+            const band2 = document.getElementById('band2');
+            const band3 = document.getElementById('band3');
+            const band4 = document.getElementById('band4');
+            
+            const band1Vis = document.getElementById('band1-vis');
+            const band2Vis = document.getElementById('band2-vis');
+            const band3Vis = document.getElementById('band3-vis');
+            const band4Vis = document.getElementById('band4-vis');
+
+            const resultValue = document.getElementById('result-value');
+            const resultTolerance = document.getElementById('result-tolerance');
+            const resultRange = document.getElementById('result-range');
+
+            const valueInput = document.getElementById('value-input');
+            const toleranceInput = document.getElementById('tolerance-input');
+            const convertToColorBtn = document.getElementById('convert-to-color-btn');
+            const colorTableBody = document.getElementById('color-table');
+
+            const errorModal = document.getElementById('error-modal');
+            const errorMessage = document.getElementById('error-message');
+            const closeErrorBtn = document.getElementById('close-error-btn');
+
+            function showMessage(message) {
+                errorMessage.textContent = message;
+                errorModal.classList.remove('hidden');
+                setTimeout(() => errorModal.classList.remove('opacity-0'), 10);
+            }
+
+            function hideMessage() {
+                errorModal.classList.add('opacity-0');
+                setTimeout(() => errorModal.classList.add('hidden'), 300);
+            }
+            
+            closeErrorBtn.addEventListener('click', hideMessage);
+
+            function populateSelects() {
+                Object.keys(COLORS).forEach(name => {
+                    const data = COLORS[name];
+                    const textIsDark = ['Groc', 'Blanc', 'Or', 'Plata'].includes(name);
+
+                    if (data.value !== null && data.value <= 9) {
+                        band1.innerHTML += `<option style="background-color: ${data.rgb}; color: ${textIsDark ? 'black' : 'white'};" value="${name}">${name}</option>`;
+                        band2.innerHTML += `<option style="background-color: ${data.rgb}; color: ${textIsDark ? 'black' : 'white'};" value="${name}">${name}</option>`;
+                    }
+                    if (data.multiplier !== null) {
+                        band3.innerHTML += `<option style="background-color: ${data.rgb}; color: ${textIsDark ? 'black' : 'white'};" value="${name}">${name}</option>`;
+                    }
+                    if (data.tolerance !== null) {
+                        const optionText = `${name} (±${data.tolerance}%)`;
+                        band4.innerHTML += `<option style="background-color: ${data.rgb}; color: ${textIsDark ? 'black' : 'white'};" value="${name}">${optionText}</option>`;
+                        toleranceInput.innerHTML += `<option value="${data.tolerance}">${optionText}</option>`;
+                    }
+                });
+
+                // Valors inicials
+                band1.value = 'Marró';
+                band2.value = 'Negre';
+                band3.value = 'Vermell';
+                band4.value = 'Or';
+                toleranceInput.value = '5';
+            }
+            
+            function populateTable() {
+                 const tableOrder = ['Negre', 'Marró', 'Vermell', 'Taronja', 'Groc', 'Verd', 'Blau', 'Violat', 'Gris', 'Blanc', 'Or', 'Plata'];
+                 tableOrder.forEach(name => {
+                    const data = COLORS[name];
+                    const row = `
+                        <tr class="hover:bg-gray-100">
+                            <td class="px-4 py-3 whitespace-nowrap flex items-center">
+                                <span class="w-4 h-4 rounded-full mr-2" style="background-color:${data.rgb}; border: 1px solid #ccc;"></span>
+                                ${name}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">${data.value !== null ? data.value : '-'}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">${data.multiplier !== null ? `×${formatMultiplier(data.multiplier)}` : '-'}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">${data.tolerance !== null ? `±${data.tolerance}%` : '-'}</td>
+                        </tr>
+                    `;
+                    colorTableBody.innerHTML += row;
+                 });
+            }
+
+            function formatMultiplier(value) {
+                if (value >= 1000000) return `${value / 1000000}M`;
+                if (value >= 1000) return `${value / 1000}k`;
+                return value;
+            }
+
+            function formatOhms(value) {
+                if (value >= 1000000) {
+                    return `${(value / 1000000).toString().replace('.', ',')} MΩ`;
+                }
+                if (value >= 1000) {
+                    return `${(value / 1000).toString().replace('.', ',')} kΩ`;
+                }
+                return `${value.toString().replace('.', ',')} Ω`;
+            }
+
+            function calculateFromColors() {
+                const color1 = COLORS[band1.value];
+                const color2 = COLORS[band2.value];
+                const multiplierColor = COLORS[band3.value];
+                const toleranceColor = COLORS[band4.value];
+
+                if (!color1 || !color2 || !multiplierColor || !toleranceColor) return;
+
+                const value = (color1.value * 10 + color2.value) * multiplierColor.multiplier;
+                const tolerance = toleranceColor.tolerance;
+                
+                resultValue.textContent = formatOhms(value);
+                resultTolerance.textContent = `±${tolerance}%`;
+
+                const toleranceValue = value * (tolerance / 100);
+                const minValue = value - toleranceValue;
+                const maxValue = value + toleranceValue;
+
+                resultRange.textContent = `${formatOhms(minValue)} - ${formatOhms(maxValue)}`;
+
+                band1Vis.style.backgroundColor = color1.rgb;
+                band2Vis.style.backgroundColor = color2.rgb;
+                band3Vis.style.backgroundColor = multiplierColor.rgb;
+                band4Vis.style.backgroundColor = toleranceColor.rgb;
+
+                band1.style.backgroundColor = color1.rgb;
+                band2.style.backgroundColor = color2.rgb;
+                band3.style.backgroundColor = multiplierColor.rgb;
+                band4.style.backgroundColor = toleranceColor.rgb;
+                
+                const updateSelectTextColor = (select, colorName) => {
+                     const textIsDark = ['Groc', 'Blanc', 'Or', 'Plata'].includes(colorName);
+                     select.style.color = textIsDark ? 'black' : 'white';
+                };
+                
+                updateSelectTextColor(band1, band1.value);
+                updateSelectTextColor(band2, band2.value);
+                updateSelectTextColor(band3, band3.value);
+                updateSelectTextColor(band4, band4.value);
+            }
+            
+            function parseValue(valueStr) {
+                let value = valueStr.trim().toLowerCase().replace(',', '.');
+                let multiplier = 1;
+                if (value.endsWith('k')) {
+                    multiplier = 1000;
+                    value = value.slice(0, -1);
+                } else if (value.endsWith('m')) {
+                    multiplier = 1000000;
+                    value = value.slice(0, -1);
+                }
+                return parseFloat(value) * multiplier;
+            }
+
+            function calculateFromValue() {
+                const value = parseValue(valueInput.value);
+                const tolerance = parseFloat(toleranceInput.value);
+
+                if (isNaN(value) || value < 0) {
+                    showMessage("Si us plau, introdueix un valor de resistència vàlid.");
+                    return;
+                }
+
+                const findKey = (prop, val) => Object.keys(COLORS).find(key => COLORS[key][prop] === val);
+                const availableMultipliers = Object.entries(COLORS)
+                    .filter(([name, data]) => data.multiplier !== null)
+                    .map(([name, data]) => ({name, value: data.multiplier}))
+                    .sort((a, b) => b.value - a.value); // Ordena de major a menor
+
+                let bestMatch = null;
+
+                for (const mult of availableMultipliers) {
+                    const digits = Math.round(value / mult.value);
+                    if (digits >= 10 && digits <= 99) {
+                        const d1 = Math.floor(digits / 10);
+                        const d2 = digits % 10;
+                        bestMatch = {
+                            d1: findKey('value', d1),
+                            d2: findKey('value', d2),
+                            mult: mult.name
+                        };
+                        break; 
+                    }
+                }
+                
+                // Cas especial per a valors molt petits que resulten en menys de 10
+                if (!bestMatch && value > 0) {
+                    for (const mult of availableMultipliers) {
+                        const digits = value / mult.value;
+                        if(digits < 10 && digits > 0) {
+                            const roundedDigits = Math.round(digits * 10)
+                            const d1 = Math.floor(roundedDigits / 10);
+                            const d2 = roundedDigits % 10;
+                             if(d1 === 0){ // Si el primer dígit és 0, no és una combinació vàlida per a la primera banda.
+                                continue;
+                             }
+                             bestMatch = {
+                                d1: findKey('value', d1),
+                                d2: findKey('value', d2),
+                                mult: mult.name
+                            };
+                            break;
+                        }
+                    }
+                }
+
+                const toleranceName = Object.keys(COLORS).find(key => COLORS[key].tolerance === tolerance);
+                
+                if (bestMatch && bestMatch.d1 && bestMatch.d2 && toleranceName) {
+                    band1.value = bestMatch.d1;
+                    band2.value = bestMatch.d2;
+                    band3.value = bestMatch.mult;
+                    band4.value = toleranceName;
+                    calculateFromColors();
+                } else {
+                    showMessage("No s'ha trobat una combinació de colors estàndard per a aquest valor. Prova un altre valor.");
+                }
+            }
+            
+            // Event Listeners
+            [band1, band2, band3, band4].forEach(select => {
+                select.addEventListener('change', calculateFromColors);
+            });
+            
+            convertToColorBtn.addEventListener('click', calculateFromValue);
+
+            // Init
+            populateSelects();
+            populateTable();
+            calculateFromColors();
+        });
+    </script>
+</body>
+</html>
+
